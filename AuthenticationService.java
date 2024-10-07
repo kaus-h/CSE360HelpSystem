@@ -2,6 +2,7 @@ package com.usermanagement;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -14,6 +15,11 @@ public class AuthenticationService {
         this.database = database;
         this.otpStorage = new HashMap<>();
         this.invitationStorage = new HashMap<>();
+    }
+
+    // Getter method for database
+    public Database getDatabase() {
+        return database;
     }
 
     // Method to authenticate a user
