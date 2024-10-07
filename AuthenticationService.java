@@ -67,4 +67,32 @@ public class AuthenticationService {
         }
         return false;
     }
+
+    // Method to delete a user
+    public void deleteUser(String username) {
+        database.deleteUser(username);
+    }
+
+    // Method to list all users
+    public void listUsers() {
+        database.listUsers().forEach((username, user) -> System.out.println(user));
+    }
+
+    // Method to add a role to a user
+    public void addRoleToUser(String username, String role) {
+        User user = database.getUser(username);
+        if (user != null && !user.getRoles().contains(role)) {
+            user.getRoles().add(role);
+            database.updateUser(user);
+        }
+    }
+
+    // Method to remove a role from a user
+    public void removeRoleFromUser(String username, String role) {
+        User user = database.getUser(username);
+        if (user != null) {
+            user.getRoles().remove(role);
+            database.updateUser(user);
+        }
+    }
 }
