@@ -71,6 +71,14 @@ public class AuthenticationService {
         return invitationStorage.containsKey(invitationCode);
     }
 
+    public List<String> getRolesForInvitationCode(String invitationCode) {
+        if (invitationStorage.containsKey(invitationCode)) {
+            String[] details = invitationStorage.get(invitationCode).split(":");
+            return List.of(details[1]);
+        }
+        return List.of();
+    }
+
     public void deleteUser(String username) {
         database.deleteUser(username);
     }
