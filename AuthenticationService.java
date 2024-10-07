@@ -8,10 +8,12 @@ import java.util.UUID;
 public class AuthenticationService {
     private Database database;
     private Map<String, String> otpStorage;
+    private Map<String, String> invitationStorage;
 
     public AuthenticationService(Database database) {
         this.database = database;
         this.otpStorage = new HashMap<>();
+        this.invitationStorage = new HashMap<>();
     }
 
     // Method to authenticate a user
@@ -41,5 +43,28 @@ public class AuthenticationService {
             user.setOtpExpiration(otpExpiration);
             database.updateUser(user);
         }
+    }
+
+    // Method to invite a new user
+    public String inviteUser(String username, String role) {
+        String invitationCode = UUID.randomUUID().toString();
+        invitationStorage.put(invitationCode, username + ":" + role);
+        return invitationCode;
+    }
+
+    // Method to accept an invitation
+    public boolean acceptInvitation(String username, String invitationCode, byte[] passwordHash) {
+        if (invitationStorage.containsKey(invitationCode)) {
+            String[] details = invitationStorage.get(invitationCode).split(":");
+            String invitedUsername = details[0];
+            String role = details[1];
+            if (invitedUsername.equals(username)) {
+                User user = new User(username, passwordHash, null, null, null, null, null, List.of(role), false, null, null);
+                database.addUser(user);
+                invitationStorage.remove(invitationCode);
+                return true;
+            }
+        }
+        return false;
     }
 }
