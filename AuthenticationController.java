@@ -23,4 +23,14 @@ public class AuthenticationController {
     public void resetPassword(String username, byte[] newPasswordHash) {
         authenticationService.resetPassword(username, newPasswordHash, LocalDateTime.now().plusMinutes(10));
     }
+
+    // Method to handle inviting a new user
+    public String inviteUser(String username, String role) {
+        return authenticationService.inviteUser(username, role);
+    }
+
+    // Method to handle accepting an invitation
+    public boolean acceptInvitation(String username, String invitationCode, byte[] passwordHash) {
+        return authenticationService.acceptInvitation(username, invitationCode, passwordHash);
+    }
 }
