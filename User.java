@@ -1,5 +1,6 @@
 package com.usermanagement;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class User {
@@ -11,11 +12,14 @@ public class User {
     private String lastName;
     private String preferredName;
     private List<String> roles;
+    private boolean isOneTimePassword;
+    private LocalDateTime otpExpiration;
+    private List<String> topics;
 
     // Constructors
     public User() {}
 
-    public User(String username, byte[] passwordHash, String email, String firstName, String middleName, String lastName, String preferredName, List<String> roles) {
+    public User(String username, byte[] passwordHash, String email, String firstName, String middleName, String lastName, String preferredName, List<String> roles, boolean isOneTimePassword, LocalDateTime otpExpiration, List<String> topics) {
         this.username = username;
         this.passwordHash = passwordHash;
         this.email = email;
@@ -24,6 +28,9 @@ public class User {
         this.lastName = lastName;
         this.preferredName = preferredName;
         this.roles = roles;
+        this.isOneTimePassword = isOneTimePassword;
+        this.otpExpiration = otpExpiration;
+        this.topics = topics;
     }
 
     // Getters and setters
@@ -91,6 +98,30 @@ public class User {
         this.roles = roles;
     }
 
+    public boolean isOneTimePassword() {
+        return isOneTimePassword;
+    }
+
+    public void setOneTimePassword(boolean oneTimePassword) {
+        isOneTimePassword = oneTimePassword;
+    }
+
+    public LocalDateTime getOtpExpiration() {
+        return otpExpiration;
+    }
+
+    public void setOtpExpiration(LocalDateTime otpExpiration) {
+        this.otpExpiration = otpExpiration;
+    }
+
+    public List<String> getTopics() {
+        return topics;
+    }
+
+    public void setTopics(List<String> topics) {
+        this.topics = topics;
+    }
+
     // Override toString() for better readability
     @Override
     public String toString() {
@@ -102,6 +133,9 @@ public class User {
                 ", lastName='" + lastName + '\'' +
                 ", preferredName='" + preferredName + '\'' +
                 ", roles=" + roles +
+                ", isOneTimePassword=" + isOneTimePassword +
+                ", otpExpiration=" + otpExpiration +
+                ", topics=" + topics +
                 '}';
     }
 }
