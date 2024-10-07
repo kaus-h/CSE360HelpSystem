@@ -10,8 +10,20 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class HelpSystemUI extends Application {
+
+    private AuthenticationService authenticationService;
+    private UserService userService;
+
+    public HelpSystemUI() {
+        Database database = new Database();
+        this.authenticationService = new AuthenticationService(database);
+        this.userService = new UserService();
+    }
 
     @Override
     public void start(Stage primaryStage) {
@@ -73,12 +85,14 @@ public class HelpSystemUI extends Application {
         Label skillsLabel = new Label("Skill Levels:");
         grid.add(skillsLabel, 0, 6);
         String[] topics = {"Java", "Eclipse", "JavaFX", "GitHub"};
+        List<ComboBox<String>> skillLevelComboBoxes = new ArrayList<>();
         for (int i = 0; i < topics.length; i++) {
             Label topicLabel = new Label(topics[i]);
             grid.add(topicLabel, 0, 7 + i);
             ComboBox<String> skillLevelCombo = new ComboBox<>();
             skillLevelCombo.getItems().addAll("Beginner", "Intermediate", "Advanced", "Expert");
             skillLevelCombo.setValue("Intermediate"); // Default
+            skillLevelComboBoxes.add(skillLevelCombo);
             grid.add(skillLevelCombo, 1, 7 + i);
         }
 
@@ -92,7 +106,8 @@ public class HelpSystemUI extends Application {
             handleUserSubmission(emailField.getText(), usernameField.getText(), passwordField.getText(), 
                                  otpCheckBox.isSelected(), expiryDatePicker.getValue(),
                                  firstNameField.getText(), middleNameField.getText(), 
-                                 lastNameField.getText(), preferredNameField.getText());
+                                 lastNameField.getText(), preferredNameField.getText(), 
+                                 skillLevelComboBoxes);
         });
 
         // Scene setup
@@ -102,14 +117,24 @@ public class HelpSystemUI extends Application {
     }
 
     private void handleUserSubmission(String email, String username, String password, boolean otp, LocalDate expiryDate, 
-                                      String firstName, String middleName, String lastName, String preferredName) {
+                                      String firstName, String middleName, String lastName, String preferredName,
+                                      List<ComboBox<String>> skillLevelComboBoxes) {
         // Hash the password using SHA-256
         byte[] passwordHash = hashPassword(password);
 
-        // Create a User object
-        User user = new User(username, passwordHash, email, firstName, middleName, lastName, preferredName, null);
+        // Collect skill levels
+        List<String> topics = new ArrayList<>();
+        for (ComboBox<String> comboBox : skillLevelComboBoxes) {
+            topics.add(comboBox.getValue());
+        }
 
-        // Handle the user object (e.g., save to database, print to console, etc.)
+        // Create a User object
+        User user = new User(username, passwordHash, email, firstName, middleName, lastName, preferredName, new ArrayList<>(), otp, expiryDate != null ? expiryDate.atStartOfDay() : null, topics);
+
+        // Add user to the user service
+        userService.addUser(user);
+
+        // Print user info to console
         System.out.println("User info submitted");
         System.out.println(user);
     }
