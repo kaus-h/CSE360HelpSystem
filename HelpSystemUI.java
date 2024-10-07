@@ -10,14 +10,15 @@ import javafx.stage.Stage;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class HelpSystemUI extends Application {
 
     private AuthenticationService authenticationService;
     private UserService userService;
-    private TextField usernameInput; 
-    private PasswordField passwordInput; 
+    private TextField usernameInput;
+    private PasswordField passwordInput;
     private TextField invitationCodeInput;
 
     public HelpSystemUI() {
@@ -303,23 +304,164 @@ public class HelpSystemUI extends Application {
     }
 
     private void displayInviteUserPage() {
-        // Implementation here
+        Stage stage = new Stage();
+        stage.setTitle("Invite New User");
+
+        GridPane grid = new GridPane();
+        grid.setPadding(new Insets(10, 10, 10, 10));
+        grid.setVgap(8);
+        grid.setHgap(10);
+
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Username");
+        GridPane.setConstraints(usernameField, 0, 0);
+
+        ComboBox<String> roleComboBox = new ComboBox<>();
+        roleComboBox.getItems().addAll("Student", "Instructor", "Admin");
+        GridPane.setConstraints(roleComboBox, 0, 1);
+
+        Button inviteButton = new Button("Invite");
+        GridPane.setConstraints(inviteButton, 0, 2);
+        inviteButton.setOnAction(e -> {
+            String username = usernameField.getText();
+            String role = roleComboBox.getValue();
+            String invitationCode = authenticationService.inviteUser(username, role);
+            showAlert("Success", "User invited. Invitation code: " + invitationCode);
+        });
+
+        grid.getChildren().addAll(usernameField, roleComboBox, inviteButton);
+        Scene scene = new Scene(grid, 400, 200);
+        stage.setScene(scene);
+        stage.show();
     }
 
     private void displayResetUserPage() {
-        // Implementation here
+        Stage stage = new Stage();
+        stage.setTitle("Reset User Password");
+
+        GridPane grid = new GridPane();
+        grid.setPadding(new Insets(10, 10, 10, 10));
+        grid.setVgap(8);
+        grid.setHgap(10);
+
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Username");
+        GridPane.setConstraints(usernameField, 0, 0);
+
+        Button resetButton = new Button("Reset Password");
+        GridPane.setConstraints(resetButton, 0, 1);
+        resetButton.setOnAction(e -> {
+            String username = usernameField.getText();
+            String otp = authenticationService.generateOtp(username);
+            LocalDateTime otpExpiration = LocalDateTime.now().plusMinutes(15);
+            userService.resetUserPassword(username, hashPassword(otp), otpExpiration);
+            showAlert("Success", "User password reset. OTP: " + otp);
+        });
+
+        grid.getChildren().addAll(usernameField, resetButton);
+        Scene scene = new Scene(grid, 400, 200);
+        stage.setScene(scene);
+        stage.show();
     }
 
     private void displayDeleteUserPage() {
-        // Implementation here
+        Stage stage = new Stage();
+        stage.setTitle("Delete User Account");
+
+        GridPane grid = new GridPane();
+        grid.setPadding(new Insets(10, 10, 10, 10));
+        grid.setVgap(8);
+        grid.setHgap(10);
+
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Username");
+        GridPane.setConstraints(usernameField, 0, 0);
+
+        Button deleteButton = new Button("Delete User");
+        GridPane.setConstraints(deleteButton, 0, 1);
+        deleteButton.setOnAction(e -> {
+            String username = usernameField.getText();
+            userService.deleteUser(username);
+            authenticationService.deleteUser(username);
+            showAlert("Success", "User account deleted.");
+        });
+
+        grid.getChildren().addAll(usernameField, deleteButton);
+        Scene scene = new Scene(grid, 400, 200);
+        stage.setScene(scene);
+        stage.show();
     }
 
     private void displayListUsersPage() {
-        // Implementation here
+        Stage stage = new Stage();
+        stage.setTitle("List of Users");
+
+        GridPane grid = new GridPane();
+        grid.setPadding(new Insets(10, 10, 10, 10));
+        grid.setVgap(8);
+        grid.setHgap(10);
+
+        List<User> users = userService.listUsers();
+        StringBuilder userList = new StringBuilder();
+        for (User user : users) {
+            userList.append(user.getUsername()).append(" - ").append(user.getRoles()).append("\n");
+        }
+
+        TextArea userListTextArea = new TextArea(userList.toString());
+        userListTextArea.setEditable(false);
+        GridPane.setConstraints(userListTextArea, 0, 0);
+
+        Button closeButton = new Button("Close");
+        GridPane.setConstraints(closeButton, 0, 1);
+        closeButton.setOnAction(e -> stage.close());
+
+        grid.getChildren().addAll(userListTextArea, closeButton);
+        Scene scene = new Scene(grid, 400, 300);
+        stage.setScene(scene);
+        stage.show();
     }
 
     private void displayManageRolesPage() {
-        // Implementation here
+        Stage stage = new Stage();
+        stage.setTitle("Manage User Roles");
+
+        GridPane grid = new GridPane();
+        grid.setPadding(new Insets(10, 10, 10, 10));
+        grid.setVgap(8);
+        grid.setHgap(10);
+
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Username");
+        GridPane.setConstraints(usernameField, 0, 0);
+
+        ComboBox<String> roleComboBox = new ComboBox<>();
+        roleComboBox.getItems().addAll("Student", "Instructor", "Admin");
+        GridPane.setConstraints(roleComboBox, 0, 1);
+
+        Button addRoleButton = new Button("Add Role");
+        GridPane.setConstraints(addRoleButton, 0, 2);
+        addRoleButton.setOnAction(e -> {
+            String username = usernameField.getText();
+            String role = roleComboBox.getValue();
+            userService.addRoleToUser(username, role);
+            authenticationService.addRoleToUser(username, role);
+            showAlert("Success", "Role added to user.");
+        });
+
+        Button removeRoleButton = new Button("Remove Role");
+        GridPane.setConstraints(removeRoleButton, 0, 3);
+        removeRoleButton.setOnAction(e -> {
+            String username = usernameField.getText();
+            String role = roleComboBox.getValue();
+            userService.removeRoleFromUser(username, role);
+            authenticationService.removeRoleFromUser(username, role);
+            showAlert("Success", "Role removed from user.");
+        });
+
+        grid.getChildren().addAll(usernameField, roleComboBox, addRoleButton, removeRoleButton);
+        Scene scene = new Scene(grid, 400, 300);
+        stage.setScene(scene);
+        stage.show();
     }
 
     private void showAlert(String title, String message) {
