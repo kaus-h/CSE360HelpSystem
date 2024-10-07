@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -27,116 +28,115 @@ public class HelpSystemUI extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        primaryStage.setTitle("Help System User Information");
+        primaryStage.setTitle("Help System");
 
-        // GridPane for layout
-        GridPane grid = new GridPane();
-        grid.setPadding(new Insets(10, 10, 10, 10));
-        grid.setVgap(10);
-        grid.setHgap(10);
-
-        // Email Address
-        Label emailLabel = new Label("Email Address:");
-        grid.add(emailLabel, 0, 0);
-        TextField emailField = new TextField();
-        grid.add(emailField, 1, 0);
-
-        // Username
-        Label usernameLabel = new Label("Username:");
-        grid.add(usernameLabel, 0, 1);
-        TextField usernameField = new TextField();
-        grid.add(usernameField, 1, 1);
-
-        // Password
-        Label passwordLabel = new Label("Password:");
-        grid.add(passwordLabel, 0, 2);
-        PasswordField passwordField = new PasswordField();
-        grid.add(passwordField, 1, 2);
-
-        // One-time Password Checkbox
-        CheckBox otpCheckBox = new CheckBox("One-time Password");
-        grid.add(otpCheckBox, 1, 3);
-
-        // Password Expiry Date
-        Label expiryDateLabel = new Label("Expiry Date:");
-        grid.add(expiryDateLabel, 0, 4);
-        DatePicker expiryDatePicker = new DatePicker();
-        grid.add(expiryDatePicker, 1, 4);
-
-        // Name Fields (First, Middle, Last, Preferred)
-        Label nameLabel = new Label("Name:");
-        grid.add(nameLabel, 0, 5);
-        TextField firstNameField = new TextField();
-        firstNameField.setPromptText("First Name");
-        TextField middleNameField = new TextField();
-        middleNameField.setPromptText("Middle Name");
-        TextField lastNameField = new TextField();
-        lastNameField.setPromptText("Last Name");
-        TextField preferredNameField = new TextField();
-        preferredNameField.setPromptText("Preferred Name");
-
-        // Horizontal box for name fields
-        grid.add(firstNameField, 1, 5);
-        grid.add(middleNameField, 2, 5);
-        grid.add(lastNameField, 3, 5);
-        grid.add(preferredNameField, 4, 5);
-
-        // Skill Levels (Beginner, Intermediate, Advanced, Expert)
-        Label skillsLabel = new Label("Skill Levels:");
-        grid.add(skillsLabel, 0, 6);
-        String[] topics = {"Java", "Eclipse", "JavaFX", "GitHub"};
-        List<ComboBox<String>> skillLevelComboBoxes = new ArrayList<>();
-        for (int i = 0; i < topics.length; i++) {
-            Label topicLabel = new Label(topics[i]);
-            grid.add(topicLabel, 0, 7 + i);
-            ComboBox<String> skillLevelCombo = new ComboBox<>();
-            skillLevelCombo.getItems().addAll("Beginner", "Intermediate", "Advanced", "Expert");
-            skillLevelCombo.setValue("Intermediate"); // Default
-            skillLevelComboBoxes.add(skillLevelCombo);
-            grid.add(skillLevelCombo, 1, 7 + i);
-        }
-
-        // Submit Button
-        Button submitButton = new Button("Submit");
-        grid.add(submitButton, 1, 11);
-
-        // Event handling for submit
-        submitButton.setOnAction(e -> {
-            // Handle submit actions
-            handleUserSubmission(emailField.getText(), usernameField.getText(), passwordField.getText(), 
-                                 otpCheckBox.isSelected(), expiryDatePicker.getValue(),
-                                 firstNameField.getText(), middleNameField.getText(), 
-                                 lastNameField.getText(), preferredNameField.getText(), 
-                                 skillLevelComboBoxes);
-        });
-
-        // Scene setup
-        Scene scene = new Scene(grid, 800, 400);
-        primaryStage.setScene(scene);
+        // Create login page
+        GridPane loginGrid = createLoginGrid();
+        Scene loginScene = new Scene(loginGrid, 800, 400);
+        primaryStage.setScene(loginScene);
         primaryStage.show();
     }
 
-    private void handleUserSubmission(String email, String username, String password, boolean otp, LocalDate expiryDate, 
-                                      String firstName, String middleName, String lastName, String preferredName,
-                                      List<ComboBox<String>> skillLevelComboBoxes) {
-        // Hash the password using SHA-256
-        byte[] passwordHash = hashPassword(password);
+    private GridPane createLoginGrid() {
+        GridPane grid = new GridPane();
+        grid.setPadding(new Insets(10, 10, 10, 10));
+        grid.setVgap(8);
+        grid.setHgap(10);
 
-        // Collect skill levels
-        List<String> topics = new ArrayList<>();
-        for (ComboBox<String> comboBox : skillLevelComboBoxes) {
-            topics.add(comboBox.getValue());
-        }
+        // Username
+        Label usernameLabel = new Label("Username:");
+        GridPane.setConstraints(usernameLabel, 0, 0);
+        TextField usernameInput = new TextField();
+        GridPane.setConstraints(usernameInput, 1, 0);
 
-        // Create a User object
-        User user = new User(username, passwordHash, email, firstName, middleName, lastName, preferredName, new ArrayList<>(), otp, expiryDate != null ? expiryDate.atStartOfDay() : null, topics);
+        // Password
+        Label passwordLabel = new Label("Password:");
+        GridPane.setConstraints(passwordLabel, 0, 1);
+        PasswordField passwordInput = new PasswordField();
+        GridPane.setConstraints(passwordInput, 1, 1);
 
-        // Add user to the user service
-        userService.addUser(user);
+        // Login Button
+        Button loginButton = new Button("Login");
+        GridPane.setConstraints(loginButton, 1, 2);
+        loginButton.setOnAction(e -> {
+            String username = usernameInput.getText();
+            byte[] passwordHash = hashPassword(passwordInput.getText());
+            if (authenticationService.authenticate(username, passwordHash)) {
+                User user = userService.getUser(username);
+                if (user.getRoles().size() > 1) {
+                    displayRoleSelection(user);
+                } else {
+                    displayHomePage(user.getRoles().get(0));
+                }
+            } else {
+                showAlert("Invalid credentials", "Username or password is incorrect.");
+            }
+        });
 
-        // Print user info to console
-        System.out.println("User info submitted");
-        System.out.println(user);
+        grid.getChildren().addAll(usernameLabel, usernameInput, passwordLabel, passwordInput, loginButton);
+        return grid;
+    }
+
+    private void displayRoleSelection(User user) {
+        Stage stage = new Stage();
+        stage.setTitle("Select Role");
+
+        GridPane grid = new GridPane();
+        grid.setPadding(new Insets(10, 10, 10, 10));
+        grid.setVgap(8);
+        grid.setHgap(10);
+
+        Label roleLabel = new Label("Select role for this session:");
+        GridPane.setConstraints(roleLabel, 0, 0);
+        ComboBox<String> roleComboBox = new ComboBox<>();
+        roleComboBox.getItems().addAll(user.getRoles());
+        GridPane.setConstraints(roleComboBox, 1, 0);
+
+        Button selectButton = new Button("Select");
+        GridPane.setConstraints(selectButton, 1, 1);
+        selectButton.setOnAction(e -> {
+            String selectedRole = roleComboBox.getValue();
+            displayHomePage(selectedRole);
+            stage.close();
+        });
+
+        grid.getChildren().addAll(roleLabel, roleComboBox, selectButton);
+        Scene scene = new Scene(grid, 400, 200);
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    private void displayHomePage(String role) {
+        Stage stage = new Stage();
+        stage.setTitle(role + " Home Page");
+
+        GridPane grid = new GridPane();
+        grid.setPadding(new Insets(10, 10, 10, 10));
+        grid.setVgap(8);
+        grid.setHgap(10);
+
+        Label welcomeLabel = new Label("Welcome to the " + role + " home page!");
+        GridPane.setConstraints(welcomeLabel, 0, 0);
+
+        Button logoutButton = new Button("Logout");
+        GridPane.setConstraints(logoutButton, 0, 1);
+        logoutButton.setOnAction(e -> {
+            stage.close();
+            start(new Stage());
+        });
+
+        grid.getChildren().addAll(welcomeLabel, logoutButton);
+        Scene scene = new Scene(grid, 400, 200);
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     private byte[] hashPassword(String password) {
