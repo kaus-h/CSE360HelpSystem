@@ -10,15 +10,14 @@ import javafx.stage.Stage;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 public class HelpSystemUI extends Application {
 
     private AuthenticationService authenticationService;
     private UserService userService;
+    private TextField usernameInput; // Declare as instance variable
+    private PasswordField passwordInput; // Declare as instance variable
 
     public HelpSystemUI() {
         Database database = new Database();
@@ -30,11 +29,36 @@ public class HelpSystemUI extends Application {
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Help System");
 
-        // Create login page
-        GridPane loginGrid = createLoginGrid();
-        Scene loginScene = new Scene(loginGrid, 800, 400);
-        primaryStage.setScene(loginScene);
+        // Check if the database is empty
+        if (userService.listUsers().isEmpty()) {
+            // First user setup as Admin
+            GridPane firstUserGrid = createFirstUserGrid();
+            Scene firstUserScene = new Scene(firstUserGrid, 800, 400);
+            primaryStage.setScene(firstUserScene);
+        } else {
+            // Regular login page
+            GridPane loginGrid = createLoginGrid();
+            Scene loginScene = new Scene(loginGrid, 800, 400);
+            primaryStage.setScene(loginScene);
+        }
         primaryStage.show();
+    }
+
+    private GridPane createFirstUserGrid() {
+        GridPane grid = createLoginGrid();
+        Button setupButton = new Button("Setup Admin Account");
+        GridPane.setConstraints(setupButton, 1, 3);
+        setupButton.setOnAction(e -> {
+            String username = usernameInput.getText();
+            byte[] passwordHash = hashPassword(passwordInput.getText());
+            User adminUser = new User(username, passwordHash, null, null, null, null, null, List.of(Role.ADMIN), false, null, null);
+            userService.addUser(adminUser);
+            authenticationService.getDatabase().addUser(adminUser); // Store admin user in the database
+            showAlert("Success", "Admin account created. Please log in.");
+            start(new Stage()); // Restart to show login page
+        });
+        grid.getChildren().add(setupButton);
+        return grid;
     }
 
     private GridPane createLoginGrid() {
@@ -46,13 +70,13 @@ public class HelpSystemUI extends Application {
         // Username
         Label usernameLabel = new Label("Username:");
         GridPane.setConstraints(usernameLabel, 0, 0);
-        TextField usernameInput = new TextField();
+        usernameInput = new TextField();
         GridPane.setConstraints(usernameInput, 1, 0);
 
         // Password
         Label passwordLabel = new Label("Password:");
         GridPane.setConstraints(passwordLabel, 0, 1);
-        PasswordField passwordInput = new PasswordField();
+        passwordInput = new PasswordField();
         GridPane.setConstraints(passwordInput, 1, 1);
 
         // Login Button
@@ -65,6 +89,8 @@ public class HelpSystemUI extends Application {
                 User user = userService.getUser(username);
                 if (user.getRoles().size() > 1) {
                     displayRoleSelection(user);
+                } else if (user.getEmail() == null) {
+                    displayAccountSetup(user);
                 } else {
                     displayHomePage(user.getRoles().get(0));
                 }
@@ -75,6 +101,55 @@ public class HelpSystemUI extends Application {
 
         grid.getChildren().addAll(usernameLabel, usernameInput, passwordLabel, passwordInput, loginButton);
         return grid;
+    }
+
+    private void displayAccountSetup(User user) {
+        Stage stage = new Stage();
+        stage.setTitle("Finish Setting Up Your Account");
+
+        GridPane grid = new GridPane();
+        grid.setPadding(new Insets(10, 10, 10, 10));
+        grid.setVgap(8);
+        grid.setHgap(10);
+
+        TextField emailField = new TextField();
+        emailField.setPromptText("Email");
+        GridPane.setConstraints(emailField, 0, 0);
+
+        TextField firstNameField = new TextField();
+        firstNameField.setPromptText("First Name");
+        GridPane.setConstraints(firstNameField, 0, 1);
+
+        TextField middleNameField = new TextField();
+        middleNameField.setPromptText("Middle Name");
+        GridPane.setConstraints(middleNameField, 0, 2);
+
+        TextField lastNameField = new TextField();
+        lastNameField.setPromptText("Last Name");
+        GridPane.setConstraints(lastNameField, 0, 3);
+
+        TextField preferredNameField = new TextField();
+        preferredNameField.setPromptText("Preferred Name");
+        GridPane.setConstraints(preferredNameField, 0, 4);
+
+        Button completeSetupButton = new Button("Complete Setup");
+        GridPane.setConstraints(completeSetupButton, 0, 5);
+        completeSetupButton.setOnAction(e -> {
+            user.setEmail(emailField.getText());
+            user.setFirstName(firstNameField.getText());
+            user.setMiddleName(middleNameField.getText());
+            user.setLastName(lastNameField.getText());
+            user.setPreferredName(preferredNameField.getText());
+            userService.updateUser(user);
+            showAlert("Success", "Account setup completed.");
+            stage.close();
+            start(new Stage()); // Restart to show login page
+        });
+
+        grid.getChildren().addAll(emailField, firstNameField, middleNameField, lastNameField, preferredNameField, completeSetupButton);
+        Scene scene = new Scene(grid, 400, 300);
+        stage.setScene(scene);
+        stage.show();
     }
 
     private void displayRoleSelection(User user) {
