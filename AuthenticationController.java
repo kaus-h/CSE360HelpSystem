@@ -33,4 +33,24 @@ public class AuthenticationController {
     public boolean acceptInvitation(String username, String invitationCode, byte[] passwordHash) {
         return authenticationService.acceptInvitation(username, invitationCode, passwordHash);
     }
+
+    // Method to delete a user account
+    public void deleteUser(String username) {
+        authenticationService.deleteUser(username);
+    }
+
+    // Method to list all users
+    public void listUsers() {
+        authenticationService.listUsers();
+    }
+
+    // Method to add a role to a user
+    public void addRole(String username, String role) {
+        authenticationService.addRoleToUser(username, role);
+    }
+
+    // Method to remove a role from a user
+    public void removeRole(String username, String role) {
+        authenticationService.removeRoleFromUser(username, role);
+    }
 }
