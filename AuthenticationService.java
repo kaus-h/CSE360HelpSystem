@@ -17,30 +17,25 @@ public class AuthenticationService {
         this.invitationStorage = new HashMap<>();
     }
 
-    // Getter method for database
     public Database getDatabase() {
         return database;
     }
 
-    // Method to authenticate a user
     public boolean authenticate(String username, byte[] passwordHash) {
         User user = database.getUser(username);
         return user != null && java.util.Arrays.equals(user.getPasswordHash(), passwordHash);
     }
 
-    // Method to generate and store OTP
     public String generateOtp(String username) {
         String otp = UUID.randomUUID().toString();
         otpStorage.put(username, otp);
         return otp;
     }
 
-    // Method to validate OTP
     public boolean validateOtp(String username, String otp) {
         return otpStorage.getOrDefault(username, "").equals(otp);
     }
 
-    // Method to reset user password
     public void resetPassword(String username, byte[] newPasswordHash, LocalDateTime otpExpiration) {
         User user = database.getUser(username);
         if (user != null) {
@@ -51,14 +46,12 @@ public class AuthenticationService {
         }
     }
 
-    // Method to invite a new user
     public String inviteUser(String username, String role) {
         String invitationCode = UUID.randomUUID().toString();
         invitationStorage.put(invitationCode, username + ":" + role);
         return invitationCode;
     }
 
-    // Method to accept an invitation
     public boolean acceptInvitation(String username, String invitationCode, byte[] passwordHash) {
         if (invitationStorage.containsKey(invitationCode)) {
             String[] details = invitationStorage.get(invitationCode).split(":");
@@ -74,17 +67,18 @@ public class AuthenticationService {
         return false;
     }
 
-    // Method to delete a user
+    public boolean validateInvitationCode(String invitationCode) {
+        return invitationStorage.containsKey(invitationCode);
+    }
+
     public void deleteUser(String username) {
         database.deleteUser(username);
     }
 
-    // Method to list all users
     public void listUsers() {
         database.listUsers().forEach((username, user) -> System.out.println(user));
     }
 
-    // Method to add a role to a user
     public void addRoleToUser(String username, String role) {
         User user = database.getUser(username);
         if (user != null && !user.getRoles().contains(role)) {
@@ -93,7 +87,6 @@ public class AuthenticationService {
         }
     }
 
-    // Method to remove a role from a user
     public void removeRoleFromUser(String username, String role) {
         User user = database.getUser(username);
         if (user != null) {
